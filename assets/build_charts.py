@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Builds the Lamba 0.4 comparison charts (SVG, real text) and Markdown tables from one data table.
 
-Usage: python build_charts.py   (writes the .svg files next to this script and tables.md)
+Usage: python build_charts.py [--svg]   (writes charts.md and tables.md next to this script; --svg also writes the SVG charts)
 """
 import os
 import textwrap
@@ -225,8 +225,78 @@ def tables():
     return "\n".join(L) + "\n"
 
 
+# ---------------------------------------------------------------- native text charts (Markdown + block characters)
+EIGHTHS = ["", "▏", "▎", "▍", "▌", "▋", "▊", "▉"]
+BARW = 20
+
+
+def tbar(v):
+    n = int(round(max(v, 0) / 100 * BARW * 8))
+    full, rem = divmod(n, 8)
+    s = "█" * full + EIGHTHS[rem]
+    return s + "░" * (BARW - len(s))
+
+
+def text_charts():
+    total = sum(len(g[1]) for g in VS)
+    take = f"Lamba 0.4 leads Lamba 0.3 on {len(VS[0][1])} of {total} tests, is level on {len(VS[1][1])} and trails on {len(VS[2][1])}."
+    o = [f"**{take}**", ""]
+    o.append("| " + " | ".join(["Calls a search tool when it should (first turn)", "MalayMMLU, generative 5k", "Chat tone: friendly, blind judge", "Refuses harmful prompts (with the constitution)"]) + " |")
+    o.append("|:-:|:-:|:-:|:-:|")
+    o.append("| " + " | ".join(f"**{k[0]}**" for k in KPIS) + " |")
+    o.append("| " + " | ".join(f"{k[2]}<br>{k[3]}" for k in KPIS) + " |")
+    o.append("")
+    o.append("#### Lamba 0.4 against Lamba 0.3 and stock Qwen")
+    o.append("")
+    o.append('Every bar is "higher is better" (rates where lower is better are shown as 100 minus the rate), on a 0 to 100 scale. '
+             "Rows are sorted by the gap between 0.4 and 0.3, shown on the right. Stock Qwen3.8-27B appears only where we ran it. "
+             "Lamba 0.4's base model is different from 0.3's, so the comparison mixes training and base.")
+    o.append("")
+    o.append("```text")
+    for gname, items in VS:
+        o.append(f"{gname.upper()} ({len(items)})")
+        o.append("")
+        for lab, a, b, note, q, qn in sorted(items, key=lambda r: -abs(r[1] - r[2])):
+            o.append(f"{lab:<58}{sg(a - b):>7}")
+            o.append(f"  Lamba 0.4   {tbar(a)} {f1(a):>5}")
+            o.append(f"  Lamba 0.3   {tbar(b)} {f1(b):>5}")
+            if q is not None:
+                o.append(f"  Stock Qwen  {tbar(q)} {f1(q):>5}")
+            o.append("")
+    o.append("```")
+    o.append("")
+    o.append("#### Against other models")
+    o.append("")
+    o.append("Higher is better on every chart. Lamba runs are at repetition penalty 1.05; the other models ran at provider defaults "
+             "with no penalty. Models without a result are left out of that chart (Gemini 3.8 Flash hides its reasoning so repetition "
+             "cannot be scored; no loop test was run for Claude Opus 5.5). Claude Sonnet 5.5 and Opus 5.5 ran without extended thinking.")
+    o.append("")
+    o.append("```text")
+    short = {k: s for k, _, s in MODELS}
+    for mid, title, sdef, fn in METS:
+        ok = sorted([(k, fn(RAW[k])) for k, _, _ in MODELS if fn(RAW[k]) is not None], key=lambda t: -t[1])
+        rank = 1 + sum(1 for k, v in ok if v > fn(RAW["v04"]))
+        o.append(f"{title.upper()} - Lamba 0.4 ranks {ordn(rank)} of {len(ok)}")
+        o.append(f"({sdef})")
+        for k, v in ok:
+            mark = "▶" if k == "v04" else " "
+            o.append(f"{mark} {short[k]:<20}{tbar(v)} {f1(v):>5}")
+        o.append("")
+    o.append("```")
+    return chr(10).join(o) + chr(10)
+
+
 if __name__ == "__main__":
-    open(os.path.join(OUT, "lamba-0.4-vs-0.3.svg"), "w", encoding="utf-8", newline="\n").write(chart_vs())
-    open(os.path.join(OUT, "lamba-0.4-vs-other-models.svg"), "w", encoding="utf-8", newline="\n").write(chart_others())
-    open(os.path.join(OUT, "tables.md"), "w", encoding="utf-8", newline="\n").write(tables())
-    print("wrote lamba-0.4-vs-0.3.svg, lamba-0.4-vs-other-models.svg, tables.md")
+    import sys
+
+    def write(name, text):
+        with open(os.path.join(OUT, name), "w", encoding="utf-8", newline=chr(10)) as fh:
+            fh.write(text)
+
+    write("charts.md", text_charts())
+    write("tables.md", tables())
+    print("wrote charts.md, tables.md")
+    if "--svg" in sys.argv:
+        write("lamba-0.4-vs-0.3.svg", chart_vs())
+        write("lamba-0.4-vs-other-models.svg", chart_others())
+        print("wrote the two SVG files")
