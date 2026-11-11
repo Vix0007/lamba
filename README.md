@@ -14,7 +14,14 @@ hybrid (Gated DeltaNet + full attention) base.
 
 ## Lamba 0.4 at a glance
 
-Lamba 0.4 against Lamba 0.3, stock Qwen3.8-27B and other models, on our own test sets (not independently reproduced; Lamba 0.4 is on a different base than 0.1 to 0.3). The charts are plain text, so every number can be searched and copied. They are generated from one data table by [`assets/build_charts.py`](assets/build_charts.py); an interactive version is in [`assets/lamba-0.4-metrics.html`](assets/lamba-0.4-metrics.html).
+Lamba 0.4 against Lamba 0.3, stock Qwen3.8-27B and other models, on our own test sets (not independently reproduced; Lamba 0.4 is on a different base than 0.1 to 0.3). The charts are vector SVG with real text and adapt to light and dark mode; a plain-text version and the tables are below. They are generated from one data table by [`assets/build_charts.py`](assets/build_charts.py); an interactive version is in [`assets/lamba-0.4-metrics.html`](assets/lamba-0.4-metrics.html).
+
+![Chart: Lamba 0.4 against Lamba 0.3 and stock Qwen3.8-27B. Lamba 0.4 leads on 7 of 13 tests, is level on 4 and trails on 2.](assets/lamba-0.4-vs-0.3.svg)
+
+![Chart: Lamba 0.4 against Lamba 0.3, stock Qwen and seven other models on loops and tool maths, five panels.](assets/lamba-0.4-vs-other-models.svg)
+
+<details>
+<summary>Text version of the charts</summary>
 
 **Lamba 0.4 leads Lamba 0.3 on 7 of 13 tests, is level on 4 and trails on 2.**
 
@@ -160,6 +167,8 @@ STOPS AFTER VERIFYING - Lamba 0.4 ranks 5th of 10
   ILMU v3.1           █████████████▉░░░░░░  69.6
 
 ```
+
+</details>
 
 <details>
 <summary>The numbers behind the charts (tables)</summary>
