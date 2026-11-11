@@ -250,6 +250,49 @@ cd reports/lamba-0.1-0.2
 tectonic -X compile main.tex
 ```
 
+## Citation
+
+If you use Lamba 0.4, please cite it. The method and the earlier versions are described in the Lamba 0.1 and 0.2
+technical report, which you can cite as well.
+
+```bibtex
+@misc{vixerolabs2026lamba04,
+  title        = {Lamba 0.4},
+  author       = {{Vixero Labs}},
+  year         = {2026},
+  howpublished = {Hugging Face model, \url{https://huggingface.co/VixeroAI/Lamba-0.4}},
+  note         = {Open weights}
+}
+
+@techreport{vixerolabs2026lamba0102,
+  title        = {Lamba: Reducing Doom Loops and Answer-Letter Bias Without Losing Capability. Technical Report of Lamba 0.1 and 0.2},
+  author       = {{Vixero Labs}},
+  institution  = {Vixero Labs},
+  year         = {2026},
+  month        = oct,
+  url          = {https://github.com/Vix0007/lamba/blob/main/reports/lamba-0.1-0.2/main.pdf},
+  note         = {Snapshot of 2 October 2026}
+}
+```
+
+## Credits
+
+Lamba 0.4 is built on **Qwen3.8-27B** by the Qwen Team at Alibaba Cloud (Apache-2.0), through the community fine-tune
+`nerkyor/Qwen3.8-27B-Coder390-EfficientThink-Opus5.5-GPT6Astra-Grok4.7-DSV4Pro-K3-SFT-RLOO-MTP-DFlash2` (Apache-2.0).
+The Qwen model card invites citation of their work, so please cite Qwen3.8 as well:
+
+```bibtex
+@misc{qwen38,
+  title  = {{Qwen3.8-Max}: A New Bar for Coding and Cowork},
+  url    = {https://qwen.ai/blog?id=qwen3.8},
+  author = {{Qwen Team}},
+  month  = {August},
+  year   = {2026}
+}
+```
+
+The trainer in `trainer/` is derived from Liquid AI's AntiDoom (https://github.com/Liquid4All/antidoom).
+
 ## License
 
 Apache License 2.0 (see [`LICENSE`](LICENSE)). The trainer in `trainer/` is derived from Liquid AI's AntiDoom

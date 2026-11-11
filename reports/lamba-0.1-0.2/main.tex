@@ -97,7 +97,7 @@ When given its system prompt, Lamba introduces itself as ``Lamba, built by Vixer
 \section{Setup}
 %=====================================================================
 
-\paragraph{Base model.} The base (\texttt{soup-linear-l1.0}) is a 28.8B-parameter model with the architecture of Qwen3.8-27B: 64 layers, hidden size 5120, 48 Gated DeltaNet layers \citep{yang2025gdn} interleaved with 16 full-attention layers. We continued training it before this work and treat it as fixed here.
+\paragraph{Base model.} The base (\texttt{soup-linear-l1.0}) is a 28.8B-parameter model with the architecture of Qwen3.8-27B \citep{qwen38}: 64 layers, hidden size 5120, 48 Gated DeltaNet layers \citep{yang2025gdn} interleaved with 16 full-attention layers. We continued training it before this work and treat it as fixed here.
 
 \paragraph{Hardware.} All training and evaluation ran on a single NVIDIA L40S (48\,GB, about 46\,GB usable) with 30\,GB of host RAM; a second identical machine was used on a few days for evaluation. The base cannot be held in bf16 on the card, so training uses 4-bit (NF4) QLoRA \citep{dettmers2023qlora} and serving uses online fp8 quantisation. Appendix~\ref{app:compute} gives run times.
 
