@@ -8,7 +8,7 @@ hybrid (Gated DeltaNet + full attention) base.
 | 0.1, 0.2 | Doom-loop and answer-letter-bias fixes (LoRA adapters); 0.2 adds a DPO stage on tool-use transcripts | not released |
 | 0.3, 0.4 | Identity, tool follow-through, Malay knowledge and tone | **0.4: open weights** (link below) |
 
-- **Lamba 0.4 weights:** TODO (Hugging Face link)
+- **Lamba 0.4 weights and model card:** https://huggingface.co/VixeroAI/Lamba-0.4
 - **Technical report, Lamba 0.1 and 0.2:** [`reports/lamba-0.1-0.2/main.pdf`](reports/lamba-0.1-0.2/main.pdf)
 - **Technical report, Lamba 0.3 and 0.4:** in preparation. It continues the 0.1/0.2 report.
 
