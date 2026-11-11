@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lamba 0.4 metrics</title>
+<style>
+:root{--surface-0:#ffffff;--surface-1:#f5f4f0;--surface-2:#ffffff;--text-primary:#141413;--text-secondary:#52514e;--text-muted:#898781;--border:rgba(20,20,19,.12);--border-strong:rgba(20,20,19,.28);--bg-accent:#e6f1fb;--border-accent:#85b7eb;--text-accent:#0c447c;--font-voice:Georgia,"Times New Roman",serif;--radius:8px}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--surface-0:#1a1a19;--surface-1:#242422;--surface-2:#2c2c2a;--text-primary:#f0efec;--text-secondary:#c3c2b7;--text-muted:#8f8d86;--border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.3);--bg-accent:#0c447c;--border-accent:#378add;--text-accent:#b5d4f4}}
+:root[data-theme=dark]{--surface-0:#1a1a19;--surface-1:#242422;--surface-2:#2c2c2a;--text-primary:#f0efec;--text-secondary:#c3c2b7;--text-muted:#8f8d86;--border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.3);--bg-accent:#0c447c;--border-accent:#378add;--text-accent:#b5d4f4}
+html,body{margin:0;background:var(--surface-0);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.page{max-width:720px;margin:0 auto;padding:24px 20px 28px}
+.lw{--c4:#2a78d6;--c3:#85b7eb;--cx:#9a988f;font-size:13px;color:var(--text-primary)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .lw{--c4:#3987e5;--c3:#9ec1ea;--cx:#7a7872}}
+:root[data-theme=dark] .lw{--c4:#3987e5;--c3:#9ec1ea;--cx:#7a7872}
+.lw .take{font-size:15px;font-weight:500;margin:2px 0 10px;line-height:1.4}
+.lw .sec{border-top:0.5px solid var(--border);margin-top:32px;padding-top:16px}
+.lw h3{font-size:15px;font-weight:500;margin:0 0 4px}
+.lw .sub{font-size:12px;color:var(--text-secondary);margin:0 0 12px;line-height:1.5}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.kpi{background:var(--surface-1);border-radius:var(--radius);padding:12px 14px}
+.kpi .v{font-family:var(--font-voice);font-size:34px;line-height:1.1;color:var(--c4);font-variant-numeric:lining-nums tabular-nums}
+.kpi .l{font-size:12px;color:var(--text-secondary);margin-top:4px;line-height:1.35}
+.kpi .g{font-size:12px;font-weight:500;margin-top:6px}
+.kpi .d{font-size:11px;color:var(--text-muted);margin-top:1px}
+.leg{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--text-secondary);margin:0 0 6px}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.grp{font-size:12px;font-weight:500;color:var(--text-secondary);border-top:0.5px solid var(--border);margin:16px 0 6px;padding-top:8px}
+.grp:first-of-type{border-top:0;margin-top:8px;padding-top:0}
+.row{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) 46px;gap:10px;align-items:center;padding:6px 0}
+.row .n{font-size:12px;color:var(--text-secondary);line-height:1.25}
+.row .dl{font-size:11px;font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.bars{display:flex;flex-direction:column;gap:3px}
+.b{display:flex;align-items:center;gap:6px}
+.b .bar{display:block;border-radius:0 4px 4px 0}
+.b .val{font-size:11px;color:var(--text-primary);font-variant-numeric:tabular-nums;line-height:1}
+.m2{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:10px;align-items:center;padding:3px 6px;margin:0 -6px;border-radius:4px}
+.m2.usrow{background:var(--surface-1)}
+.m2 .n{font-size:12px;color:var(--text-secondary)}
+.m2 .n.us{color:var(--text-primary);font-weight:500}
+.m2 .tr{position:relative;height:16px}
+.m2 .bar{position:absolute;left:0;top:2px;height:12px;border-radius:0 4px 4px 0}
+.m2 .val{position:absolute;top:0;font-size:11px;line-height:16px;font-variant-numeric:tabular-nums}
+.m2 .val.us{font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.chips button{font:inherit;font-size:12px;padding:4px 10px;border:0.5px solid var(--border-strong);border-radius:var(--radius);background:transparent;color:var(--text-primary);cursor:pointer}
+.chips button:hover{background:var(--surface-1)}
+.chips button[aria-pressed=true]{background:var(--bg-accent);border-color:var(--border-accent);color:var(--text-accent)}
+.na{font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.5}
+.foot{font-size:11px;color:var(--text-muted);line-height:1.55;margin-top:24px}
+#tip{position:absolute;z-index:5;background:var(--surface-2);border:0.5px solid var(--border-strong);border-radius:6px;padding:5px 8px;font-size:12px;pointer-events:none;display:none;max-width:250px;color:var(--text-primary)}
+.tw{overflow-x:auto}
+.tw table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.tw th,.tw td{padding:6px 8px;border-bottom:0.5px solid var(--border);text-align:right}
+.tw th{font-weight:500;color:var(--text-secondary);font-size:11px;vertical-align:bottom}
+.tw th:first-child,.tw td:first-child{text-align:left}
+.tw tr.us td{font-weight:500;background:var(--surface-1)}
+details{margin-top:14px;font-size:12px}
+details summary{cursor:pointer;color:var(--text-secondary)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+@media (max-width:520px){
+ .row{grid-template-columns:minmax(0,1fr) 46px}
+ .row .n{grid-column:1 / 3}
+ .m2{grid-template-columns:minmax(0,120px) minmax(0,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<h2 class="sr-only">Lamba 0.4 leads Lamba 0.3 on 7 of 13 tests, is level on 4 and trails on 2, with stock Qwen3.8-27B shown where a run exists, and is compared against eight other models on loops and tool maths.</h2>
+<div class="lw" id="lw" style="position:relative">
+<p class="take" id="take"></p>
+<div class="kpis">
+ <div class="kpi"><div class="v">99.2%</div><div class="l">calls a search tool when it should (first turn)</div><div class="g">+26.6 pts vs 0.3</div><div class="d">0.3: 72.6%</div></div>
+ <div class="kpi"><div class="v">84.6%</div><div class="l">MalayMMLU, generative 5k</div><div class="g">+2.1 pts vs 0.3</div><div class="d">0.3: 82.5%</div></div>
+ <div class="kpi"><div class="v">8.0<span style="font-size:18px">/10</span></div><div class="l">chat tone: friendly, blind judge</div><div class="g">about +2.3 vs 0.3</div><div class="d">0.3: about 5.7</div></div>
+ <div class="kpi"><div class="v">93.3%</div><div class="l">refuses harmful prompts (with the constitution)</div><div class="g">+15.7 pts vs 0.3</div><div class="d">0.3: 77.6%</div></div>
+</div>
+
+<div class="sec">
+<h3>Lamba 0.4 against Lamba 0.3 and stock Qwen</h3>
+<p class="sub">Every bar is "higher is better" (rates where lower is better are shown as 100 minus the rate). Rows are sorted by the gap between 0.4 and 0.3, shown on the right. Stock Qwen3.8-27B appears only where we ran it. The Lamba 0.4 base model is different from 0.3's, so the comparison mixes training and base.</p>
+<div class="leg"><span><i style="background:var(--c4)"></i>Lamba 0.4</span><span><i style="background:var(--c3)"></i>Lamba 0.3</span><span><i style="background:var(--cx)"></i>Stock Qwen3.8-27B</span></div>
+<div id="vs"></div>
+</div>
+
+<div class="sec">
+<h3>Against other models</h3>
+<p class="sub" id="msub"></p>
+<div class="chips" id="chips" role="group" aria-label="Metric"></div>
+<div id="mchart"></div>
+<div class="na" id="mna"></div>
+</div>
+
+<div class="sec">
+<h3>Capability, Lamba versions and bases</h3>
+<p class="sub">No outside-model data exists for these two tests. GPQA-D noise is about plus or minus 6 questions, so the Lamba versions are level on it.</p>
+<div class="tw" id="captbl"></div>
+</div>
+
+<details><summary>Show the comparison numbers as a table</summary><div class="tw" id="tbl"></div></details>
+<p class="foot">Lamba 0.1 to 0.4 loop results are like-for-like runs at repetition penalty 1.05; stock Qwen is shown at penalty 1.1 (its no-penalty numbers are in the tooltips) and the other models ran at provider defaults with no penalty, which favours Lamba on loops. Stock Qwen and the other models were run through providers' APIs. Claude Sonnet 5.5 and Opus 5.5 ran without extended thinking; Gemini hides its reasoning, so only its budget rate can be scored. Own test sets and harnesses on one machine, not independently reproduced.</p>
+<div id="tip"></div>
+</div>
+</div>
+<script>
+if(/theme=dark/.test(location.search))document.documentElement.dataset.theme='dark';
+if(/theme=light/.test(location.search))document.documentElement.dataset.theme='light';
+if(/open=1/.test(location.search))document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('details').forEach(d=>d.open=true)});
+const f1=v=>(Math.round(v*10)/10).toFixed(1);
+const sg=v=>(v>=0?'+':'−')+f1(Math.abs(v));
+const tip=document.getElementById('tip'),root=document.getElementById('lw');
+function showTip(e,t){tip.innerHTML=t;tip.style.display='block';const r=root.getBoundingClientRect();let x=e.clientX-r.left+12,y=e.clientY-r.top+14;if(x>r.width-260)x=r.width-260;tip.style.left=x+'px';tip.style.top=y+'px'}
+function hideTip(){tip.style.display='none'}
+const vs=[
+ ['0.4 ahead',[
+  ['Ibu negara / negeri questions correct',96.1,61.7,'128 samples each',null,''],
+  ['Does not self-introduce on "X tu apa?" (100 minus rate)',97.4,68.4,'self-intro 2.6% vs 31.6%, n=76',null,''],
+  ['Calls a search tool when it should (first turn)',99.2,72.6,'248 held-out prompts, first-turn subset n=124',null,''],
+  ['Refuses harmful prompts, with constitution',93.3,77.6,'StrongREJECT, n=313',83.1,'stock Qwen 83.1%'],
+  ['Malaysian facts correct',81.9,73.9,'348 samples each',80.2,'stock Qwen 80.2%, 9 misreads, same held-out facts'],
+  ['Avoids needless searches (100 minus over-search)',98.8,94.6,'over-search 1.2% vs 5.4%, 760 samples',null,''],
+  ['MalayMMLU generative, 5k',84.6,82.5,'0.4 is the mean of two runs (84.74, 84.50); paired p about 1e-6',null,'']]],
+ ['Level, within noise',[
+  ['GPQA-Diamond (160 vs 155 of 198)',80.8,78.3,'noise about plus or minus 6 questions',null,''],
+  ['Finishes within token budget',74.8,72.9,'g150; most budget hits are long legitimate answers',34.0,'stock Qwen at penalty 1.1; 29.3 with no penalty'],
+  ['Refuses harmful prompts, no system prompt',96.2,95.5,'StrongREJECT, n=313',95.5,'stock Qwen 95.5%'],
+  ['Clean endings (100 minus tail repetition)',97.0,97.3,'g150 at penalty 1.05',90.0,'stock Qwen at penalty 1.1; 78.0 with no penalty']]],
+ ['0.3 ahead',[
+  ['Says "Lamba" on held-out identity items',96.2,99.7,'n=636; 0.3 partly answers "Lamba" even when another model is only mentioned',null,''],
+  ['Loop-free (100 minus Liquid-style loop rate)',93.5,96.0,'g150 at penalty 1.05; 4 runs vs 3 pooled',78.0,'stock Qwen at penalty 1.1; 66.0 with no penalty']]]
+];
+const total=vs.reduce((s,g)=>s+g[1].length,0);
+document.getElementById('take').textContent=`Lamba 0.4 leads Lamba 0.3 on ${vs[0][1].length} of ${total} tests, is level on ${vs[1][1].length} and trails on ${vs[2][1].length}.`;
+const vsEl=document.getElementById('vs');
+vs.forEach(([g,items])=>{
+ const sorted=items.slice().sort((x,y)=>Math.abs(y[1]-y[2])-Math.abs(x[1]-x[2]));
+ vsEl.insertAdjacentHTML('beforeend',`<div class="grp">${g} · ${items.length}</div>`);
+ sorted.forEach(([n,a,b,note,q,qn])=>{
+  const d=a-b;
+  const row=document.createElement('div');row.className='row';
+  const qbar=q==null?'':`<div class="b"><span class="bar" style="height:8px;width:${q*0.62}%;background:var(--cx)"></span><span class="val" style="color:var(--text-secondary)">${f1(q)}</span></div>`;
+  row.innerHTML=`<div class="n">${n}</div><div class="bars"><div class="b"><span class="bar" style="height:12px;width:${a*0.62}%;background:var(--c4)"></span><span class="val">${f1(a)}</span></div><div class="b"><span class="bar" style="height:8px;width:${b*0.62}%;background:var(--c3)"></span><span class="val" style="color:var(--text-secondary)">${f1(b)}</span></div>${qbar}</div><div class="dl">${sg(d)}</div>`;
+  row.addEventListener('mousemove',e=>showTip(e,`<b style="font-weight:500">${n}</b><br>Lamba 0.4: ${f1(a)}<br>Lamba 0.3: ${f1(b)}<br>`+(q==null?`Stock Qwen: not run<br>`:`Stock Qwen: ${f1(q)}<br>`)+`Gap 0.4 vs 0.3: ${sg(d)} points<br><span style="color:var(--text-secondary)">${note}${qn?'<br>'+qn:''}</span>`));
+  row.addEventListener('mouseleave',hideTip);vsEl.appendChild(row)})});
+
+const models=[
+ {k:'v04',n:'Lamba 0.4',us:1},{k:'v03',n:'Lamba 0.3',us:2},
+ {k:'qwen',n:'Qwen3.8-27B (stock)'},{k:'tcap',n:'ThinkingCap-Qwen3.8-27B'},{k:'ds',n:'DeepSeek v4.1 Flash'},
+ {k:'glm',n:'GLM-5.3 Flash'},{k:'ilmu',n:'ILMU v3.1'},{k:'gem',n:'Gemini 3.8 Flash'},
+ {k:'son',n:'Claude Sonnet 5.5'},{k:'opus',n:'Claude Opus 5.5'}];
+const raw={
+ v04:{L:6.5,any:3.0,B:25.2,acc:99.6,red:4.1},v03:{L:4.0,any:2.7,B:27.1,acc:99.6,red:4.9},
+ qwen:{L:34.0,any:22.0,B:70.7,acc:96.2,red:3.9},tcap:{L:18.7,any:13.3,B:49.3,acc:100,red:5.9},
+ ds:{L:26.0,any:17.3,B:60.0,acc:100,red:10.1},glm:{L:30.0,any:26.0,B:64.7,acc:91.2,red:3.2},
+ ilmu:{L:19.3,any:18.7,B:22.7,acc:75.0,red:30.4},gem:{L:null,any:null,B:10.7,acc:100,red:4.1},
+ son:{L:0.0,any:0.0,B:4.7,acc:100,red:0.0},opus:{L:null,any:null,B:null,acc:100,red:1.7}};
+const inv=v=>v==null?null:100-v, id=v=>v;
+const mets=[
+ {id:'L',t:'Loop-free',s:'100 minus the share of answers with a 60-character block repeated 4 or more times (g150, 150 prompts)',f:r=>inv(r.L)},
+ {id:'any',t:'Clean endings',s:'100 minus the share with any repetition in the last 2,500 characters (g150)',f:r=>inv(r.any)},
+ {id:'B',t:'Finishes within budget',s:'100 minus the share that hit the 4,000-token cap (g150); many hits are long but legitimate answers',f:r=>inv(r.B)},
+ {id:'acc',t:'Tool maths correct',s:'Share of 240 runs correct (eval30: 30 maths tasks x 8 runs, with a Python tool)',f:r=>id(r.acc)},
+ {id:'red',t:'Stops after verifying',s:'100 minus the share of solved runs that kept calling tools after the answer was verified (eval30)',f:r=>inv(r.red)}];
+let cur='L';
+const chips=document.getElementById('chips');
+mets.forEach(m=>{const b=document.createElement('button');b.textContent=m.t;b.setAttribute('aria-pressed',m.id===cur);b.onclick=()=>{cur=m.id;[...chips.children].forEach((c,i)=>c.setAttribute('aria-pressed',mets[i].id===cur));draw()};chips.appendChild(b)});
+function colorOf(m){return m.us===1?'var(--c4)':m.us===2?'var(--c3)':'var(--cx)'}
+const ord=n=>n+(n%10===1&&n!==11?'st':n%10===2&&n!==12?'nd':n%10===3&&n!==13?'rd':'th');
+function draw(){
+ const m=mets.find(x=>x.id===cur);
+ const rows=models.map(o=>({...o,v:m.f(raw[o.k])}));
+ const ok=rows.filter(r=>r.v!=null).sort((a,b)=>b.v-a.v),na=rows.filter(r=>r.v==null);
+ const me=ok.find(r=>r.k==='v04'),rank=1+ok.filter(r=>r.v>me.v).length;
+ document.getElementById('msub').innerHTML=`<span style="font-weight:500;color:var(--text-primary)">Lamba 0.4 ranks ${ord(rank)} of ${ok.length}.</span> ${m.s}. Higher is better.`;
+ const el=document.getElementById('mchart');el.innerHTML='';
+ ok.forEach(r=>{
+  const d=document.createElement('div');d.className='m2'+(r.us===1?' usrow':'');
+  d.innerHTML=`<div class="n ${r.us?'us':''}">${r.n}</div><div class="tr"><span class="bar" style="width:${Math.max(r.v,0.6)*0.86}%;background:${colorOf(r)}"></span><span class="val ${r.us===1?'us':''}" style="left:calc(${Math.max(r.v,0.6)*0.86}% + 6px)">${f1(r.v)}</span></div>`;
+  d.addEventListener('mousemove',e=>showTip(e,`<b style="font-weight:500">${r.n}</b><br>${m.t}: ${f1(r.v)}`));d.addEventListener('mouseleave',hideTip);el.appendChild(d)});
+ const why={gem:'reasoning is hidden, repetition cannot be scored',opus:'no loop test was run'};
+ document.getElementById('mna').textContent=na.length?'Not shown: '+na.map(r=>`${r.n} (${why[r.k]})`).join('; ')+'. Stock Qwen is at its provider default (no repetition penalty) here.':'Stock Qwen is at its provider default (no repetition penalty) here.';
+}
+draw();
+
+const capRows=[
+ ['Lamba base','151','8,900','83.60','369',0],['Coder390 base','157','n/a','83.84','n/a',0],
+ ['Lamba 0.1','162','8,950','83.26','377',0],['Lamba 0.2','154','8,741','82.84','372',0],
+ ['Lamba 0.3','155','8,654','82.50','422',0],['Lamba 0.4','160','7,260','84.62','278',1]];
+document.getElementById('captbl').innerHTML='<table><thead><tr><th>Model</th><th>GPQA-D /198</th><th>Reasoning chars</th><th>MalayMMLU %</th><th>Tokens/answer</th></tr></thead><tbody>'+capRows.map(r=>`<tr class="${r[5]?'us':''}"><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('')+'</tbody></table>';
+
+const t=document.getElementById('tbl');
+t.innerHTML='<table><thead><tr><th>Model</th>'+mets.map(m=>`<th>${m.t}</th>`).join('')+'</tr></thead><tbody>'+models.map(o=>`<tr class="${o.us===1?'us':''}"><td>${o.n}</td>`+mets.map(m=>{const v=m.f(raw[o.k]);return `<td>${v==null?'n/a':f1(v)}</td>`}).join('')+'</tr>').join('')+'</tbody></table>';
+</script>
+</body>
+</html>

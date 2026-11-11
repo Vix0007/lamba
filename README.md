@@ -12,6 +12,15 @@ hybrid (Gated DeltaNet + full attention) base.
 - **Technical report, Lamba 0.1 and 0.2:** [`reports/lamba-0.1-0.2/main.pdf`](reports/lamba-0.1-0.2/main.pdf)
 - **Technical report, Lamba 0.3 and 0.4:** in preparation. It continues the 0.1/0.2 report.
 
+## Lamba 0.4 at a glance
+
+Lamba 0.4 against Lamba 0.3, stock Qwen3.8-27B and eight other models, on our own test sets (not independently
+reproduced; Lamba 0.4 is on a different base than 0.1 to 0.3). An interactive version is in
+[`assets/lamba-0.4-metrics.html`](assets/lamba-0.4-metrics.html).
+
+![Lamba 0.4 metrics against Lamba 0.3, stock Qwen and other models](assets/lamba-0.4-metrics-light.png#gh-light-mode-only)
+![Lamba 0.4 metrics against Lamba 0.3, stock Qwen and other models](assets/lamba-0.4-metrics-dark.png#gh-dark-mode-only)
+
 ## Layout
 
 ```
