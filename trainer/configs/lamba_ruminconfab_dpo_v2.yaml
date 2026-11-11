@@ -1,0 +1,73 @@
+# Ruminconfab nudge-guard DPO retrain, v2 = CORRECTED BUGFIX RETRAIN (DS #206), not an
+# iterative round-2. A real needle-matching bug (numeric_str_variants never emitted a
+# plain 1-decimal needle like "2.5" unless the value was near an integer) was found+fixed
+# tonight; it affected 5 distinct task ids out of 93 in the mining pool (HO_p1=2.5,
+# EX_poly2=9.6, EX_explog3/EX_imp1/EX_imp3=0.5). Re-mining the SAME recipe/filters (cap=10,
+# the same cap v1 used) on the now-corrected needles + a larger accumulated rollout pool
+# (81 eligible tasks, 1944 rollouts, vs whatever smaller pool produced v1's 399) gives 406
+# pairs, zero held-out leakage (verified). DS #206's explicit call: redo the SAME recipe
+# from scratch (init=s1337, dpo_ref=s1337) rather than continuing from dpov1 -- chaining
+# dpo_ref=dpov1 on top of dpov1 would roughly double-count the same preference direction
+# (pi0*exp(r/beta) -> pi1*exp(r/beta) ~ pi0*exp(2r/beta)), which is a different, separate
+# decision (real iterative round 2) from "the same recipe, corrected data." Everything
+# else below is COPIED VERBATIM from lamba_ruminconfab_dpo_v1.yaml -- same init/ref/tether,
+# same LoRA scheme, same beta/optimizer/seed -- only dataset_jsonl, output dirs, and
+# kl_replay_weight (recomputed for 406 pairs via DS's own formula) differ.
+model_name: soup-linear-l1.0
+
+train:
+  dataset_jsonl: /home/ubuntu/antidoom_data/retrain_training_data_v2.jsonl
+  output_dir: "runs/lamba_ruminconfab_dpo_v2"
+  merged_output_dir: "runs/lamba_ruminconfab_dpo_v2_merged"
+  auto_merged_output_name: true
+  merge_lora: false
+
+  max_seq_length: 20000
+  batch_size: 1
+  gradient_accumulation_steps: 32
+  num_epochs: 4
+  learning_rate: 0.000005
+  warmup_ratio: 0.1
+  weight_decay: 0.0
+  seed: 1337
+  max_train_examples: null
+
+  rejected_regularisation_strength: 0.0
+  chosen_regularisation_strength: 0.0
+  source_balance_mode: "off"
+  min_chosen_tokens: 1
+  filter_rejected_stop_words: false
+
+  lora_r: 128
+  lora_alpha: 128
+  lora_dropout: 0.05
+  lora_ensure_weight_tying: false
+  freeze_early_layers: true
+  n_layers_unfrozen: 32
+  lora_layer_set: [3, 7, 11, 15, 19, 23, 27, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
+  lora_rank_pattern: {q_proj: 128, k_proj: 128, v_proj: 128, o_proj: 128, gate_proj: 64, up_proj: 64, down_proj: 64, in_proj_qkv: 64, in_proj_z: 32, out_proj: 64, lm_head: 16}
+  lora_exclude_modules: [in_proj_a, in_proj_b]
+  target_modules: ["out_proj", "up_proj", "gate_proj", "down_proj", "in_proj_a", "k_proj", "in_proj_b", "in_proj_z", "v_proj", "q_proj", "o_proj", "in_proj_qkv", "lm_head"]
+  load_in_4bit: true
+  bf16: true
+
+  early_stopping_chosen_win: null
+  optim: adamw_torch_fused
+  lr_scheduler_type: cosine
+  max_grad_norm: 1.0
+  logging_steps: 2
+  save_steps: 10
+  save_total_limit: 5
+  resume: true
+  disable_input_grads: true
+  init_adapter_path: "runs/lamba_ruminconfab_s1337/lora"
+  sft_kl_anchor_path: "runs/lamba_letterfix2/lora/checkpoint-10"
+  dpo_ref_adapter_path: "runs/lamba_ruminconfab_s1337/lora"
+  sft_kl_lambda: 0.01
+  clip_epsilon_logits: 1.5
+  lambda_mse: 0.1
+  lambda_mse_target: 0.1
+
+  dpo_beta: 0.1
+  dpo_sft_weight: 0.05
+  kl_replay_weight: 0.1015  # DS #206's formula 0.2 * (406/800), recomputed for the corrected 406-pair set

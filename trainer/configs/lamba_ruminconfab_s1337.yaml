@@ -1,0 +1,63 @@
+# Ruminconfab onset-token FTPO fix (DS #141/#143/#148): behaviors A (tool-call rumination,
+# 26 rows, hard FTPO) + B3 (infra confabulation, 3 rows, soft FTPO), tethered to a FROZEN
+# letterfix2-c10 copy (not base -- see the ftpo_train.py comment at the "ref_adapter_name"
+# assignment for why), plus 160 KL-only replay rows (100 loop-safety, 60 letter-bias) holding
+# distribution elsewhere. Seed 1337 = go/no-go run per DS's explicit staged-seed plan; seed 42
+# only runs if this passes the pre-registered eval panel.
+model_name: soup-linear-l1.0
+
+train:
+  dataset_jsonl: /home/ubuntu/antidoom_data/ruminconfab_train_mix_v1.jsonl
+  output_dir: "runs/lamba_ruminconfab_s1337"
+  merged_output_dir: "runs/lamba_ruminconfab_s1337_merged"
+  auto_merged_output_name: true
+  merge_lora: false
+
+  max_seq_length: 8000
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  num_epochs: 2
+  learning_rate: 0.00002
+  warmup_ratio: 0.05
+  weight_decay: 0.0
+  seed: 1337
+  max_train_examples: null
+
+  rejected_regularisation_strength: 0.3
+  chosen_regularisation_strength: 0.5
+  source_balance_mode: "off"
+  min_chosen_tokens: 1
+  filter_rejected_stop_words: true
+
+  # Same GDN-aware LoRA scheme as every validated round (v9c) in this project.
+  lora_r: 128
+  lora_alpha: 128
+  lora_dropout: 0.0
+  lora_ensure_weight_tying: false
+  freeze_early_layers: true
+  n_layers_unfrozen: 32
+  lora_layer_set: [3, 7, 11, 15, 19, 23, 27, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
+  lora_rank_pattern: {q_proj: 128, k_proj: 128, v_proj: 128, o_proj: 128, gate_proj: 64, up_proj: 64, down_proj: 64, in_proj_qkv: 64, in_proj_z: 32, out_proj: 64, lm_head: 16}
+  lora_exclude_modules: [in_proj_a, in_proj_b]
+  target_modules: ["out_proj", "up_proj", "gate_proj", "down_proj", "in_proj_a", "k_proj", "in_proj_b", "in_proj_z", "v_proj", "q_proj", "o_proj", "in_proj_qkv", "lm_head"]
+  load_in_4bit: true
+  bf16: true
+
+  early_stopping_chosen_win: null
+  optim: adamw_torch_fused
+  lr_scheduler_type: cosine
+  max_grad_norm: 1.0
+  logging_steps: 2
+  save_steps: 5
+  save_total_limit: 5
+  resume: true
+  disable_input_grads: true
+  init_adapter_path: "runs/lamba_letterfix2/lora/checkpoint-10"
+  # Repurposed exactly as documented in ftpo_train.py: loads a FROZEN second copy of
+  # letterfix2-c10 as the "ref" adapter and points the FTPO trainer's null-ref context at it
+  # (tether = c10, not base). sft_kl_lambda has no other effect here (no kind=sft_ce rows).
+  sft_kl_anchor_path: "runs/lamba_letterfix2/lora/checkpoint-10"
+  sft_kl_lambda: 0.01
+  clip_epsilon_logits: 1.5
+  lambda_mse: 0.1
+  lambda_mse_target: 0.1

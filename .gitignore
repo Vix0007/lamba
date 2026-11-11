@@ -1,0 +1,28 @@
+# credentials and local config
+.env
+*.pem
+*.key
+*credentials*
+*_token*
+.claude/
+CLAUDE.md
+
+# large files and artifacts (weights live on Hugging Face)
+*.safetensors
+*.gguf
+*.pt
+*.bin
+*.tgz
+*.zip
+*.jsonl.gz
+
+# LaTeX intermediates
+*.aux
+*.log
+*.blg
+*.bbl
+*.out
+*.toc
+
+__pycache__/
+*.pyc

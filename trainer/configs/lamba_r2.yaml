@@ -1,0 +1,144 @@
+# ROUND 2 (final): all pools deduped, all audit fixes. Round-1 config preserved as lamba_base.yaml
+model_name: soup-linear-l1.0
+
+generation:
+  api_base_url: "http://127.0.0.1:8001/v1"
+  api_key: "EMPTY"
+  model_name: soup-linear-l1.0
+  tokenizer_name: /home/ubuntu/models/soup-linear-l1.0
+  generation_backend: "completions"
+
+  hf_dataset: null
+  input_jsonl: /home/ubuntu/antidoom_data/loop_eliciting_prompts.jsonl
+  prompt_field: "prompt"
+  max_prompts: null
+  target_pairs: 20000
+  target_pair_batch_size: 128
+  threads: 32
+  request_batch_size: 128
+
+  prompt_template: |-
+    {prompt}
+
+    Think through the problem step by step, then respond with your final answer as "Answer: <your answer>".
+  system_prompt: ""
+
+  max_prompt_tokens: 2000
+  max_new_tokens: 2000
+  temperature: 0.1
+  top_p: 1.0
+  top_k: 50
+  min_p: null  # min_p is rejected by our server: not supported with MTP speculative decoding
+  top_logprobs: 20
+  timeout: 1800
+  stop: []
+
+  repetition:
+    min_repeats: 4
+    max_period: 1024
+    min_period: 1
+    min_total_repeated: 60
+    sample_len: 16
+    sample_interval: 128
+
+  chosen_max_tokens: 20
+  chosen_top_k: 50
+  chosen_min_p: null
+  chosen_min_decoded_chars: 1
+  chosen_require_alnum: false
+  chosen_skip_raw_token_substrings: []
+  skip_eval_key_substrings: ["bfcl", "tau", "browse", "search"]
+
+train:
+  dataset_jsonl: null
+  output_dir: "runs/lamba2_lora"
+  merged_output_dir: "runs/lamba2_merged"
+  auto_merged_output_name: true
+  # merge_lora=true isn't supported with load_in_4bit=true (can't merge into an
+  # in-memory 4-bit-quantized base) -- do it as a separate `antidoom merge` step
+  # afterward, loading the base at full precision for the actual merge.
+  merge_lora: false
+  # OOM'd at batch_size=4/max_seq_length=6000/freeze_early_layers=false (44.1GB
+  # used of 44.4GB capacity, died inside a GDN chunked-attention layer on step 0).
+  # Those settings came from spec.md's 4x-L40S (192GB) plan; we have one 46GB
+  # card. Reverting to antidoom's own single-GPU defaults for the memory-heavy
+  # knobs, keeping effective_batch (=batch_size*grad_accum) unchanged at 16 so
+  # training dynamics/learning rate schedule stay the same as originally tuned.
+  # Second OOM at max_seq_length=4096: crashed at step 18/44 on what was likely
+  # an outlier-long example (batch_size=1 means per-step memory tracks that
+  # step's specific sequence length; missed by only ~30MB, so a modest further
+  # cut gives real margin without being overly conservative). No checkpointing
+  # is configured in ftpo_train.py (no save_steps), so a crash means restarting
+  # from step 0 -- getting this margin right matters.
+  # Reverting the emergency cut now that gradient checkpointing is properly
+  # enabled in ftpo_train.py (see the patch there): v5's own production
+  # trainer measures peak memory at 33.7G/46G with checkpointing even on a
+  # worst-case 6144-token row, well under our two OOMs at 4096 without it.
+  # 4096 should now have real margin instead of living at the edge.
+  max_seq_length: 6000
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  num_epochs: 1
+  learning_rate: 0.00005
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+  seed: 3407
+  # Measured steady-state: ~407s/optimizer-step on this hardware (QLoRA 4-bit
+  # dequant overhead on a single L40S) -- 12000 examples -> 426 steps -> ~48hrs,
+  # impractical. Also at 12000/426 steps, the 10%-warmup_ratio ramp (~42 steps)
+  # eats a disproportionate share of the run. Cut to ~1200 for ~40-50 steps
+  # (~4.5-5.5hrs), still comfortably above spec.md's own pair-pool-size floor
+  # logic and leaves a much healthier post-warmup training window.
+  max_train_examples: null
+
+  rejected_regularisation_strength: 0.3
+  chosen_regularisation_strength: 0.5
+  source_balance_mode: "off"
+  min_chosen_tokens: 1
+  filter_rejected_stop_words: false
+
+  lora_r: 256
+  lora_alpha: 128
+  lora_dropout: 0.0
+  lora_ensure_weight_tying: false
+  # Also reverting to the library default here: training every layer's LoRA
+  # adapters (freeze_early_layers=false) roughly doubles trainable-parameter
+  # memory vs. only unfreezing the last N layers, on top of the batch/seqlen
+  # fix above. Early layers tend to encode more generic, less loop-specific
+  # features anyway, so freezing them is a reasonable trade, not just a
+  # memory hack.
+  freeze_early_layers: true
+  n_layers_unfrozen: 10
+  # This base model (soup-linear-l1.0) has a hybrid GDN/Mamba + attention
+  # architecture, not standard dense attention -- confirmed from the actual
+  # v5_step2400 LoRA adapter's target_modules. Using the same list here so
+  # LoRA actually attaches to the GDN linear-attention layers, not just the
+  # standard q/k/v/o projections (which would silently miss most of the model).
+  target_modules: ["out_proj", "up_proj", "gate_proj", "down_proj", "in_proj_a", "k_proj", "in_proj_b", "in_proj_z", "v_proj", "q_proj", "o_proj", "in_proj_qkv", "lm_head"]
+  # 27B-scale model on a single 46GB L40S: bf16 full-precision training doesn't fit
+  # (spec.md's own primary plan needs 4x L40S / 192GB for that). Going straight to
+  # the QLoRA 4-bit fallback the spec anticipated (D5/R1) rather than attempting
+  # bf16 first and hitting OOM -- confirmed decision, no time pressure to rush this.
+  load_in_4bit: true
+  bf16: true
+
+  lambda_mse_target: 0.05
+  tau_mse_target: 0.5
+  lambda_mse: 0.4
+  clip_epsilon_logits: 2.0
+  early_stopping_chosen_win: null
+  optim: adamw_torch_fused
+  lr_scheduler_type: cosine
+  max_grad_norm: 5.0
+  logging_steps: 10
+  save_steps: 50
+  save_total_limit: 2
+  letter_hinge_weight: 1.0
+  resume: true
+  # letter-bias objective (group loss) + held-out validation
+  disable_input_grads: true
+  lambda_pbm: 0.5
+  lambda_H: 0.1
+  letter_eval_jsonl: "/home/ubuntu/antidoom_data/letter_heldout.jsonl"
+  letter_eval_every: 25
+  letter_eval_max_questions: 200

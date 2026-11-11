@@ -1,0 +1,73 @@
+# Ruminconfab nudge-guard DPO retrain (DS #168-180). Init from s1337 (on-policy for the
+# states needing correction), pi_ref = FROZEN letterfix2-c10 (loaded as a second "ref"
+# adapter, same repurposed sft_kl_anchor_path/sft_kl_lambda mechanism as ruminconfab's own
+# config -- see the comment there / ftpo_train.py's "ref_adapter_name" wiring for why).
+# Data: 181 DPO pairs (kind=hard/soft, DPOPairDataset) + 800 KL-replay rows (556
+# kind=sequence + 244 kind=letter_group, KLReplayDataset + existing LetterGroupDataset).
+# RANK FIX (DS #182, after a real smoke-test crash): DS #168's spec "rank16/alpha32" is
+# NOT satisfiable alongside init_adapter_path=s1337's checkpoint (real crash: size mismatch,
+# s1337's own checkpoint is rank128/64, raw state_dict loading cannot resize). DS #182's
+# verdict: init-from-s1337 is the load-bearing requirement (every prior phase-2 round in
+# this project means literal weight continuation); rank/alpha/target_modules are copied
+# VERBATIM from ruminconfab_s1337.yaml (also = letterfix2-c10's own scheme -- verified c10
+# and s1337 share the identical lora_rank_pattern, so both init and ref load into the same
+# adapter shape). Only dropout (0.05, a runtime mask not a weight) stays as DS #168 specified.
+model_name: soup-linear-l1.0
+
+train:
+  dataset_jsonl: /home/ubuntu/antidoom_data/smoke_dpo_data.jsonl
+  output_dir: "runs/smoke_dpo_v1"
+  merged_output_dir: "runs/smoke_dpo_v1_merged"
+  auto_merged_output_name: true
+  merge_lora: false
+
+  max_seq_length: 20000
+  batch_size: 1
+  gradient_accumulation_steps: 3
+  num_epochs: 3
+  learning_rate: 0.000005
+  warmup_ratio: 0.1
+  weight_decay: 0.0
+  seed: 1337
+  max_train_examples: null
+
+  rejected_regularisation_strength: 0.0
+  chosen_regularisation_strength: 0.0
+  source_balance_mode: "off"
+  min_chosen_tokens: 1
+  filter_rejected_stop_words: false
+
+  # Verbatim from ruminconfab_s1337.yaml / letterfix2.yaml (DS #182): rank/alpha/targets
+  # MUST match the checkpoints being loaded into "default" (s1337) and "ref" (c10).
+  lora_r: 128
+  lora_alpha: 128
+  lora_dropout: 0.05
+  lora_ensure_weight_tying: false
+  freeze_early_layers: true
+  n_layers_unfrozen: 32
+  lora_layer_set: [3, 7, 11, 15, 19, 23, 27, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
+  lora_rank_pattern: {q_proj: 128, k_proj: 128, v_proj: 128, o_proj: 128, gate_proj: 64, up_proj: 64, down_proj: 64, in_proj_qkv: 64, in_proj_z: 32, out_proj: 64, lm_head: 16}
+  lora_exclude_modules: [in_proj_a, in_proj_b]
+  target_modules: ["out_proj", "up_proj", "gate_proj", "down_proj", "in_proj_a", "k_proj", "in_proj_b", "in_proj_z", "v_proj", "q_proj", "o_proj", "in_proj_qkv", "lm_head"]
+  load_in_4bit: true
+  bf16: true
+
+  early_stopping_chosen_win: null
+  optim: adamw_torch_fused
+  lr_scheduler_type: cosine
+  max_grad_norm: 1.0
+  logging_steps: 1
+  save_steps: 2
+  save_total_limit: 5
+  resume: true
+  disable_input_grads: true
+  init_adapter_path: "runs/lamba_ruminconfab_s1337/lora"
+  sft_kl_anchor_path: "runs/lamba_letterfix2/lora/checkpoint-10"
+  sft_kl_lambda: 0.01
+  clip_epsilon_logits: 1.5
+  lambda_mse: 0.1
+  lambda_mse_target: 0.1
+
+  dpo_beta: 0.1
+  dpo_sft_weight: 0.05
+  kl_replay_weight: 0.04525  # DS #181: 0.2 * (181 DPO pairs / 800 KL-replay rows), corrects for the per-row-kind sampler's natural count ratio

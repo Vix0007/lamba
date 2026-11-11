@@ -1,0 +1,57 @@
+# BEAT-THINKINGCAP TRACK (DS consult #110 retry): plain SFT/CE on naturally-concise, verified-
+# correct, FULL untruncated self-rollouts. NOT a variant of the failed effreason-round-2 approach
+# (no onset truncation, no teacher-length anchor, no forced answer format). New `sft_ce` trainer
+# mode added specifically for this (reference_ftpo_trainer.py::_sft_ce_loss, ftpo_data.py::SFTDataset).
+# Init from letterfix2-c10 (current shipped best). Same LoRA scheme as every validated round.
+model_name: soup-linear-l1.0
+
+train:
+  dataset_jsonl: /home/ubuntu/antidoom_data/concise_sft/sft_rows_train.jsonl
+  output_dir: "runs/lamba_kl_sweep_003"
+  merged_output_dir: "runs/lamba_kl_sweep_003_merged"
+  auto_merged_output_name: true
+  merge_lora: false
+
+  max_seq_length: 4096
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  num_epochs: 2
+  learning_rate: 0.00005
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  seed: 1337
+  max_train_examples: null
+
+  rejected_regularisation_strength: 0.3
+  chosen_regularisation_strength: 0.5
+  source_balance_mode: "off"
+  min_chosen_tokens: 1
+  filter_rejected_stop_words: false
+
+  # Same GDN-aware LoRA scheme as every validated round in this project -- unchanged, per DS's
+  # explicit instruction ("copy letterfix2-c10 exactly; if the stored config differs, stored wins").
+  lora_r: 128
+  lora_alpha: 128
+  lora_dropout: 0.0
+  lora_ensure_weight_tying: false
+  freeze_early_layers: true
+  n_layers_unfrozen: 32
+  lora_layer_set: [3, 7, 11, 15, 19, 23, 27, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
+  lora_rank_pattern: {q_proj: 128, k_proj: 128, v_proj: 128, o_proj: 128, gate_proj: 64, up_proj: 64, down_proj: 64, in_proj_qkv: 64, in_proj_z: 32, out_proj: 64, lm_head: 16}
+  lora_exclude_modules: [in_proj_a, in_proj_b]
+  target_modules: ["out_proj", "up_proj", "gate_proj", "down_proj", "in_proj_a", "k_proj", "in_proj_b", "in_proj_z", "v_proj", "q_proj", "o_proj", "in_proj_qkv", "lm_head"]
+  load_in_4bit: true
+  bf16: true
+
+  early_stopping_chosen_win: null
+  optim: adamw_torch_fused
+  lr_scheduler_type: cosine
+  max_grad_norm: 1.0
+  logging_steps: 5
+  save_steps: 10
+  save_total_limit: 20
+  resume: true
+  disable_input_grads: true
+  init_adapter_path: "runs/lamba_letterfix2/lora/checkpoint-10"
+  sft_kl_anchor_path: "runs/lamba_letterfix2/lora/checkpoint-10"
+  sft_kl_lambda: 0.03

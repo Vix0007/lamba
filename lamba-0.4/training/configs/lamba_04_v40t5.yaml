@@ -1,0 +1,75 @@
+# Lamba 0.4 v40t5: FROM v40t2 (user confirmed). v40t4 data with: faith-section natural-thinking prayer pairs, capped lighter loop pairs, wrong-maker pairs, third-person content pairs w1.0. Same hyperparameters. 2026-10-13.
+# Lamba 0.4 v40u: REPAIR round FROM v40t2 (diagnosis wf_fb9382b3-195): per-row KL anchor (candidate only for knowledge replay rows; v40t2 for safety/identity/persona/old replay), sft_kl_lambda 0.2 (to v40t2 per row), gray-area CAI pairs restored, length-repair pairs, identity natural SFT + agent_raw pairs (named-product persona answers never rejected), per-row dpo_sft_weight 0.5 on identity/persona/contested, lr 1e-5. init = DPO ref = v40t2. 2026-10-12.
+# Lamba 0.4 v40t2: v40t + ROOT-CAUSE FIXES (workflow wf_12922604-03f): dpo_sft_weight 1.0 -> 0.1 (stop SFT-ing noisy chosen); KL-replay anchor = ZERO adapter (untouched candidate) with candidate's own correct short answers as replay rows (anchor chaining let drift compound); sft_kl_lambda 0.02 so tier1/identity SFT rows are not pulled to the non-refusing candidate; DPO ref + init stay v40r. 2026-10-12.
+# Lamba 0.4 v40t: 2nd CONSTITUTIONAL round FROM v40r (constitution v1.1 + prayer rule): nature+faith CAI (judged + critique->revision), short-question identity-reflex fix, Malay factual misreading pairs, tool decision (A capped vs over-search), v40r replay, tier1 SFT held at 200 (do not lobotomize). init=ref=anchor=v40r. 2026-10-11.
+# Lamba 0.4 v40r: CONSTITUTIONAL AI round FROM v40q: self-judged (Lamba+constitution, both A/B orders) pairs, context = no system prompt (bakes constitution in) + v40q replay + tier1 SFT. init=ref=anchor=v40q. 2026-10-10.
+# Lamba 0.4 v40q: persona-fix DPO patch FROM v40p (persona pairs mined on v40p + replay of v40p pairs + v40s sft tether). init=ref=anchor=v40p. 2026-10-10.
+# Lamba 0.3 v6: init v5b; DPO ref = v5b (v5b used ref v4 by mistake); KL anchor dpov2 0.2; streams: capability (mixed band), loop, safety, identity repair, tool-decision, replay. EN+MS only.
+# Lamba 0.3 v4: continue from v3 (identity ~99% but persona 5/8 and base-denial). init+DPO ref = v3, KL anchor 0.2. Data = persona-preservation + base-no-denial pairs + subsampled old. lr 1.5e-5, 2 epochs.
+# Lamba 0.3 v3: continue from v2 (init + DPO ref = v2), KL anchor stays 0.2 (dpov2 adapter). Data = round-1 pairs + round-2 pairs mined on v2 from 520 new questions. 2 epochs.
+# Lamba 0.3 v2: v1 moved the adapter only 0.85% (lr 5e-6, 75 steps) and identity stayed 0% bare. Changes: lr 2e-5, dpo_sft_weight 1.0 (CE on chosen identity answers), kl_replay 0.10, 8 ckpts kept.
+# Lamba 0.3 (identity) DPO round, ON TOP OF Lamba 0.2 (dpov2). Written 2026-10-02 before any 0.3 result.
+# Data: l03_training_data_v40t5.jsonl = NATIVE-FORMAT identity pairs (chosen via prefill, rejected = natural failure, same weak context,
+# chosen/rejected include </think> and the <|im_end|> end token) + replay rows (identity/persona replay from 0.2 itself,
+# half of the dpov2 tether sequences, all letter-bias group rows). Plan + frozen bars: antidoom_data/LAMBA_0.3_PLAN.md.
+# Recipe = dpov2's (beta 0.1, lr 5e-6, same GDN-aware LoRA, KL-replay + tiny SFT on chosen); changes vs dpov2:
+#   init / DPO-ref / KL anchor are ALL the final 0.2 adapter (dpov2 used s1337 init+ref and c10 as KL anchor),
+#   3 epochs (identity pairs are short and easy), kl_replay_weight 0.2*(202/800)=0.0505 (DS #206 formula, 202 pairs).
+model_name: cand04-bf16
+
+train:
+  dataset_jsonl: /home/ubuntu/antidoom_data/l03_training_data_v40t5.jsonl
+  output_dir: "runs/lamba_04_v40t5"
+  merged_output_dir: "runs/lamba_04_v40t5_merged"
+  auto_merged_output_name: true
+  merge_lora: false
+
+  max_seq_length: 3200
+  batch_size: 1
+  gradient_accumulation_steps: 32
+  num_epochs: 2
+  learning_rate: 0.00001
+  warmup_ratio: 0.1
+  weight_decay: 0.0
+  seed: 1337
+  max_train_examples: null
+
+  rejected_regularisation_strength: 0.0
+  chosen_regularisation_strength: 0.0
+  source_balance_mode: "off"
+  min_chosen_tokens: 1
+  filter_rejected_stop_words: false
+
+  lora_r: 128
+  lora_alpha: 128
+  lora_dropout: 0.05
+  lora_ensure_weight_tying: false
+  freeze_early_layers: true
+  n_layers_unfrozen: 32
+  lora_layer_set: [3, 7, 11, 15, 19, 23, 27, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
+  lora_rank_pattern: {q_proj: 128, k_proj: 128, v_proj: 128, o_proj: 128, gate_proj: 64, up_proj: 64, down_proj: 64, in_proj_qkv: 64, in_proj_z: 32, out_proj: 64, lm_head: 16}
+  lora_exclude_modules: [in_proj_a, in_proj_b]
+  target_modules: ["out_proj", "up_proj", "gate_proj", "down_proj", "in_proj_a", "k_proj", "in_proj_b", "in_proj_z", "v_proj", "q_proj", "o_proj", "in_proj_qkv", "lm_head"]
+  load_in_4bit: true
+  bf16: true
+
+  early_stopping_chosen_win: null
+  optim: adamw_torch_fused
+  lr_scheduler_type: cosine
+  max_grad_norm: 5.0
+  logging_steps: 2
+  save_steps: 20
+  save_total_limit: 3
+  resume: true
+  disable_input_grads: true
+  init_adapter_path: "runs/lamba_04_v40t2/lora"
+  sft_kl_anchor_path: "runs/zero_anchor/lora"
+  dpo_ref_adapter_path: "runs/lamba_04_v40t2/lora"
+  sft_kl_lambda: 0.2
+  clip_epsilon_logits: 1.5
+  lambda_mse: 0.1
+  lambda_mse_target: 0.1
+
+  dpo_beta: 0.1
+  dpo_sft_weight: 0.1
+  kl_replay_weight: 0.4

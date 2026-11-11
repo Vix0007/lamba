@@ -1,0 +1,13 @@
+Lamba
+Copyright 2026 Vixero Labs
+
+This product includes software derived from AntiDoom by Liquid AI (Liquid4All),
+https://github.com/Liquid4All/antidoom (commit bd6a126), licensed under the Apache License, Version 2.0.
+
+In trainer/src/antidoom/:
+  - cli.py, client.py, generate.py, prompts.py, repetition.py, sampling.py, tokens.py, trimmed.py and
+    __init__.py are taken from upstream without modification.
+  - config.py, ftpo_data.py, ftpo_train.py and reference_ftpo_trainer.py are modified by Vixero Labs
+    (additional losses, dataset kinds, adapter layout and training options).
+  - checkpoint_guard.py and letter_eval.py are new files by Vixero Labs.
+trainer/configs/ contains upstream's default configurations (modified) and Vixero Labs' own training configurations.
